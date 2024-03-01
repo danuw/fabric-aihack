@@ -15,4 +15,4 @@ result = model.train(data=conf['data_directory'],
                      save=conf['save'],
                      name=conf['model_name'])
 
-# resulting model is saved in runs/{conf['model_name']}/weights/best.pt
+# resulting model is saved in runs/detect/{conf['model_name']}/weights/best.pt
