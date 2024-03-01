@@ -14,4 +14,4 @@ To re-train the model, follow these steps:
   - `pip install -r requirements.txt`
 - run the following to train the model:
   - `python train_model.py`
-- Find the new best trained model in the runs folder (runs/model_name{x}/weights/best.pt)
+- Find the new best trained model in the runs folder (runs/detect/model_name{x}/weights/best.pt)
