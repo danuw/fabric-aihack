@@ -7,6 +7,7 @@ The model we trained can be found in the best.pt file. This can be loaded with a
 The issue with MLFlow was documented on the community forum: https://community.fabric.microsoft.com/t5/Hack-Together/Can-t-disable-MLFlow/m-p/3736570#M169
 
 To re-train the model, follow these steps:
+
 - download the linked training data in YOLO format.
 - extract the zip file to the repo directory
 - update config.yaml with the relevant model name and path to the data.yaml file in the dataset folder
@@ -17,4 +18,6 @@ To re-train the model, follow these steps:
 - run the following to train the model:
   - `python train_model.py`
 - Find the new best trained model in the runs folder (runs/detect/model_name{x}/weights/best.pt)
+
+  
 I haven't tested the model on the test data due to time restrictions.
