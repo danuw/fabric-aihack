@@ -2,6 +2,8 @@ The model used here is a YOLOv8 model, trained on the dataset found at: https://
 
 We attempted to train this model in Synapse/Fabric, however we encountered difficulties with both opencv (although resolved) and mlflow. 
 
+The model we trained can be found in the best.pt file. This can be loaded with a call to `YOLO('best.pt')`.
+
 The issue with MLFlow was documented on the community forum: https://community.fabric.microsoft.com/t5/Hack-Together/Can-t-disable-MLFlow/m-p/3736570#M169
 
 To re-train the model, follow these steps:
