@@ -1,0 +1,8 @@
+# UPDATE with your path to data.yaml file
+data_directory:  "PLACEHOLDER"
+device: 'cpu'
+model_name: 'go-away-mlflow'
+epochs: 100
+save: True
+plots: True
+verbose: True
