@@ -12,8 +12,6 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory in the container to /app
 WORKDIR /app
 
-COPY main-noimgshow.py /app/
-
 # Add the current directory contents into the container at /app
 ADD . /app
 

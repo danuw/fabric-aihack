@@ -1,10 +1,26 @@
 from ultralytics import YOLO
 import cv2
 
-import util
 from sort.sort import *
 from util import get_car, read_license_plate, write_csv
 
+import os
+
+import json
+import time
+from azure.eventhub import EventHubProducerClient, EventData
+from datetime import datetime
+
+# Fabric Custom App
+# Get fabric_endpoint and fabric_entity from the environment variables
+fabric_endpoint = os.environ["FABRIC_ENDPOINT"]
+fabric_entity = os.environ["FABRIC_ENTITY"]
+
+print('credentials loaded')
+
+producer = EventHubProducerClient.from_connection_string(
+    conn_str=fabric_endpoint, eventhub_name=fabric_entity
+)
 
 results = {}
 
@@ -14,10 +30,10 @@ seen_plates = {}
 
 # load models
 coco_model = YOLO('yolov8n.pt')
-license_plate_detector = YOLO('./models/license_plate_detector.pt')
+license_plate_detector = YOLO('./models/best.pt')
 
 # load video
-cap = cv2.VideoCapture('./sample.mp4')
+cap = cv2.VideoCapture('./parking.mp4')
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 
 # Get the frame size from the video capture
@@ -37,7 +53,7 @@ frame_nmr = -1
 ret = True
 frame_interval = 1.0 / 30.0  # Process one frame every 1/30 second for 30 FPS
 last_time = time.time()
-frame_skip = 5  # Skip every 10 frames
+frame_skip = 2  # Skip every 10 frames
 while ret:
     frame_nmr += 1
     ret, frame = cap.read()
@@ -95,7 +111,10 @@ while ret:
                                                                     'text_score': license_plate_text_score}}
                     number_plate_text = license_plate_text[:-5] + 'XXXXX'
 
-                if license_plate_text is not None and license_plate_text not in seen_plates:
+                height_threshold = 90
+                plate_height = int(y2-y1)
+
+                if license_plate_text is not None and license_plate_text not in seen_plates and plate_height >= height_threshold:
                     # This is the first time this plate is seen
                     # Get the current timestamp
                     timestamp = time.time()
@@ -103,30 +122,50 @@ while ret:
                     # Add the plate and timestamp to seen_plates
                     seen_plates[license_plate_text] = timestamp
 
-                    ## Make a call to the webhook
-                    #requests.post(webhook_url, data={"plate": license_plate_text, "timestamp": timestamp})
+                    ## Gate will open and saving the data to the event stream
+                    meta_list = {}
 
-                    ## Make a call to the webhook
-                    #requests.post(webhook_url, data={"plate": license_plate_text})
+                    meta_list["datetime"] = datetime.now().isoformat()
+                    meta_list["device_id"] = "BC-L1-01"
+                    meta_list["event_type"] = 1 # 1 for arrival, 2 for exit
+                    meta_list["plate_number"] = number_plate_text
+
+                    print(meta_list)
+
+                    # # Send the data to Fabric
+                    event_data_batch = producer.create_batch()
+                    event_data_batch.add(EventData(json.dumps(meta_list)))
+                    producer.send_batch(event_data_batch)
+                    
+                    open_gate_text = "Open gate"
+                elif license_plate_text is not None and license_plate_text in seen_plates:
+                    open_gate_text = "Open gate"
+                else:
+                    open_gate_text = "Close gate"
 
                 # cv show on images with bounding boxes
                 # (int(x1), int(y1)), (int(x2), int(y2))
                 blur_width = int(x2-x1)
-                blur_height = int(y2-y1)
+                blur_height = plate_height
                 blur_x = int(x1)
                 blur_y = int(y1)
 
+                # blur on number plate
                 roi = frame[blur_y:blur_y+blur_height, blur_x:blur_x+blur_width]
                 blur_image = cv2.GaussianBlur(roi,(87,87),0)
-
                 roi[:,:] = blur_image
                 
-                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                 # Calculate the position for the text
                 text_position = (int(x1), int(y1) - 10)
                 # Draw the text
-                cv2.putText(frame, number_plate_text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                cv2.rectangle(frame, (int(xcar1), int(ycar1)), (int(xcar2), int(ycar2)), (0, 0, 255), 2)
+                if blur_height >= height_threshold:
+                    box_color = (0, 255, 0)
+                else:
+                    box_color = (0, 0, 255)
+                
+                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 2) # color of the rectangle around the plate
+                cv2.putText(frame, number_plate_text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2) # color of the text
+                cv2.rectangle(frame, (int(xcar1), int(ycar1)), (int(xcar2), int(ycar2)), box_color, 2) # color of the rectangle around the car
                 cv2.imshow('frame', frame)
                 
                 #cv2.imshow('roi', roi)

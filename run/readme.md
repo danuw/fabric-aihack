@@ -28,11 +28,11 @@ docker rmi -f my-python-app ; docker build -t my-python-app . ; docker run -p 40
 ```
 
 ```
-docker build -t my-python-app .  
+docker build -t my-python-app . --load
 ```
 
 ```
-docker run -p 4000:80 my-python-app
+docker run -p 4000:80 my-python-app --env-file ./.env
 ```
 
 # Troubleshooting
@@ -51,6 +51,10 @@ Local MacOS env was erroring with
 This seems to have pointed in the right direction (to avoid the not advisable solution above - which worked when set to TRUE)
 
 https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial
+
+### The local sample and docker image can't find the source
+
+The sample video is not included. Just include a video of any cars in the street from more or less close to have varying data and test that as input
 
 ## Docker
 
